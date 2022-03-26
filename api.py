@@ -7,8 +7,20 @@ from pydantic import BaseModel
 from typing import List
 import glob
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def iter_enron(location='data/maildir', limit=1000):
     for idx, fn in enumerate(glob.glob(location + '/**/*.', recursive=True)):
