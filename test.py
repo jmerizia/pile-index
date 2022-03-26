@@ -24,11 +24,15 @@ index.add(embeddings)
 
 input = model.encode(['JOE IS A DEER HUNTING SUPERSTAR'])
 
-D, I = index.search(input, 1)
+D, I = index.search(input, 4)
 print(D, I)
 
 for idx in I[0]:
     print(sentences[idx])
+    print('')
+    print('')
+    print('')
+    print('')
 
 #Print the embeddings
 # for sentence, embedding in zip(sentences, sentence_embeddings):
