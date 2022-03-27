@@ -5,9 +5,10 @@ import numpy as np
 import torch
 from pydantic import BaseModel
 from typing import List
-import glob
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+
+from .utils import iter_pile
+
 
 app = FastAPI()
 
@@ -22,23 +23,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def iter_enron(location='data/maildir', limit=1000):
-    for idx, fn in enumerate(glob.glob(location + '/**/*.', recursive=True)):
-        if idx >= limit:
-            break
-        with open(fn, 'r') as f:
-            try:
-                text = f.read()
-                yield text
-            except:
-                print('Failed to load document', fn)
+print(list(iter_pile(limit=10)))
+quit()
 
 use_gpu = True
 device = torch.device('cuda' if use_gpu else 'cpu')
 model = 'all-MiniLM-L6-v2'
 dataset = list(iter_enron(limit=1000000))
 
-with np.load('data/embeddings.npz') as f:
+with np.load('../data/embeddings.npz') as f:
     embeddings = f['arr_0']
     ndata, dimension = tuple(embeddings.shape)
 
@@ -60,6 +53,3 @@ async def root(query: str) -> QueryResponse:
     return QueryResponse(
         results=[dataset[i] for i in I[0]],
     )
-
-
-app.mount("/", StaticFiles(directory="www", html=True), name="www")
