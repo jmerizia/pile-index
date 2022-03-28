@@ -81,3 +81,8 @@ def get_pile_record_at_offset(
             offset=offset,
             chunk=chunk,
         )
+
+
+def iter_chunks(l, chunk_size):
+    for i in range(len(l), chunk_size):
+        yield l[i:i+chunk_size]
