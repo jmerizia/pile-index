@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 
-from .utils import iter_pile
+from utils import load_pile_offset_file, get_pile_record_at_offset
 
 
 app = FastAPI()
@@ -23,13 +23,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-print(list(iter_pile(limit=10)))
-quit()
-
 use_gpu = True
 device = torch.device('cuda' if use_gpu else 'cpu')
 model = 'all-MiniLM-L6-v2'
-dataset = list(iter_enron(limit=1000000))
+offsets = load_pile_offset_file()
 
 with np.load('../data/embeddings.npz') as f:
     embeddings = f['arr_0']
@@ -39,17 +36,27 @@ model = SentenceTransformer(model)
 index = faiss.IndexFlatL2(dimension)
 index.add(embeddings)
 
+
+class PileRecordModel(BaseModel):
+    text: str
+    subset: str
+
+
 class QueryResponse(BaseModel):
-    results: List[str]
+    results: List[PileRecordModel]
 
 
 @app.post("/api/search", response_model=QueryResponse)
 async def root(query: str) -> QueryResponse:
     input = model.encode([query])
-
     D, I = index.search(input, 5)
-    print(D)
-
+    # TODO: process al other chunks as well
+    records = [get_pile_record_at_offset(0, offsets[0][i]) for i in I[0]]
     return QueryResponse(
-        results=[dataset[i] for i in I[0]],
+        results=[
+            PileRecordModel(
+                text=r.text,
+                subset=r.subset,
+            ) for r in records
+        ],
     )
